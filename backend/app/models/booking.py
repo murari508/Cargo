@@ -41,6 +41,7 @@ class Booking(Base):
     return_date: Mapped[date] = mapped_column(Date, nullable=False)
     pickup_time: Mapped[time] = mapped_column(Time, nullable=False)
     return_time: Mapped[time] = mapped_column(Time, nullable=False)
+    driving_license: Mapped[str] = mapped_column(String(50), default="", nullable=False)
 
     rental_days: Mapped[int] = mapped_column(Integer, nullable=False)
     base_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)

@@ -18,6 +18,8 @@ export default function BookingPage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  const [hasLicenseAgreement, setHasLicenseAgreement] = useState(false)
+
   const [form, setForm] = useState({
     pickup_date: params.get('pickup_date') ?? '',
     return_date: params.get('return_date') ?? '',
@@ -26,7 +28,14 @@ export default function BookingPage() {
     pickup_location: '',
     return_location: '',
     destination: '',
+    driving_license: user?.driving_license ?? '',
   })
+
+  useEffect(() => {
+    if (user?.driving_license && !form.driving_license) {
+      setForm(f => ({ ...f, driving_license: user.driving_license ?? '' }))
+    }
+  }, [user?.driving_license])
 
   useEffect(() => {
     if (car.data && !form.pickup_location) {
@@ -44,6 +53,17 @@ export default function BookingPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+
+    if (!form.driving_license || form.driving_license.trim().length < 5) {
+      setError('A valid Driving Licence number is required to book a self-drive car.')
+      return
+    }
+
+    if (!hasLicenseAgreement) {
+      setError('You must confirm that you hold a valid, original Driving Licence.')
+      return
+    }
+
     setSubmitting(true)
     try {
       const booking = await api.bookings.create({
@@ -108,16 +128,69 @@ export default function BookingPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-ink-600 bg-ink-900/60 p-4 text-sm text-slate-400">
-            <p className="text-slate-300">Driver</p>
-            <p className="mt-1">{user?.full_name} · {user?.phone} · {user?.email}</p>
-            <p className="mt-2 text-xs">Carry your driving licence and one photo ID at pickup.</p>
+          {/* Driving Licence Verification Card */}
+          <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-5 space-y-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🪪</span>
+              <div>
+                <h3 className="text-sm font-semibold text-white">Driving Licence Verification (Mandatory)</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Under Motor Vehicle safety rules, only verified driving licence holders can reserve self-drive vehicles.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label className="label flex items-center justify-between" htmlFor="dl_num">
+                <span>Government Driving Licence (DL) Number <span className="text-rose-400">*</span></span>
+                {form.driving_license && form.driving_license.length >= 5 && (
+                  <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded">
+                    ✓ Valid DL Format
+                  </span>
+                )}
+              </label>
+              <input
+                id="dl_num"
+                required
+                minLength={5}
+                maxLength={30}
+                placeholder="e.g. TS09 20210012345 or DL-1420110012345"
+                className="field uppercase tracking-wider font-mono text-sm bg-black/40 border-amber-500/40 focus:border-amber-400"
+                value={form.driving_license}
+                onChange={e => setForm({ ...form, driving_license: e.target.value.toUpperCase() })}
+              />
+              <p className="mt-1 text-[11px] text-slate-500">
+                Driver: {user?.full_name} · {user?.phone} · {user?.email}
+              </p>
+            </div>
+
+            <label className="flex items-start gap-2.5 pt-1 text-xs text-slate-300 cursor-pointer">
+              <input
+                type="checkbox"
+                required
+                checked={hasLicenseAgreement}
+                onChange={e => setHasLicenseAgreement(e.target.checked)}
+                className="mt-0.5 rounded border-white/20 bg-slate-900 text-signal focus:ring-signal"
+              />
+              <span>
+                I certify that I hold an original, unexpired Driving Licence issued by the government, and I agree to present the physical card at car pickup.
+              </span>
+            </label>
           </div>
 
           {error && <ErrorNote message={error} />}
 
-          <button className="btn-primary w-full" disabled={submitting}>
-            {submitting ? 'Holding your car…' : 'Reserve and continue to payment'}
+          <button
+            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={submitting || !form.driving_license || form.driving_license.trim().length < 5 || !hasLicenseAgreement}
+          >
+            {submitting
+              ? 'Holding your car…'
+              : !form.driving_license || form.driving_license.trim().length < 5
+              ? 'Enter Driving Licence to Reserve'
+              : !hasLicenseAgreement
+              ? 'Confirm DL Declaration to Continue'
+              : 'Reserve and continue to payment'}
           </button>
         </form>
 

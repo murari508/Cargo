@@ -50,12 +50,23 @@ def create_booking(payload: BookingCreate, db: Session = Depends(get_db),
     lat, lng = tracking.get_city_coordinates(payload.pickup_location)
     route = tracking.build_default_route(payload.pickup_location, dest)
 
+    # Enforce Driving Licence requirement: only verified licence holders can book
+    dl_number = (payload.driving_license or "").strip() or (user.driving_license or "").strip()
+    if not dl_number or len(dl_number) < 5:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "A valid Driving Licence number is required to book a self-drive car. Only verified licence holders are permitted to book.",
+        )
+    if not user.driving_license and dl_number:
+        user.driving_license = dl_number
+
     booking = Booking(
         user_id=user.id,
         car_id=car.id,
         pickup_location=payload.pickup_location,
         return_location=payload.return_location,
         destination=dest,
+        driving_license=dl_number,
         current_location=f"{payload.pickup_location} Hub",
         current_lat=lat,
         current_lng=lng,

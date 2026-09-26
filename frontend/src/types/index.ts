@@ -7,6 +7,7 @@ export interface User {
   email: string
   phone: string
   role: Role
+  driving_license?: string
   preferred_language: LangCode
   voice_response: boolean
   voice_speed: 'slow' | 'normal' | 'fast'
@@ -69,6 +70,7 @@ export interface Booking {
   payment_status: PaymentStatus
   booking_status: BookingStatus
   booking_reference: string
+  driving_license?: string
   created_at: string
   car?: Car
   destination?: string

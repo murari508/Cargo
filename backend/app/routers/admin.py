@@ -124,6 +124,21 @@ def set_role(user_id: int, role: UserRole, db: Session = Depends(get_db),
     return user
 
 
+@router.delete("/users/{user_id}", response_model=dict)
+def delete_user(user_id: int, db: Session = Depends(get_db),
+                admin: User = Depends(get_current_admin)):
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+    if user.id == admin.id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            "You cannot delete your own admin account")
+    db.query(Booking).filter(Booking.user_id == user_id).delete()
+    db.delete(user)
+    db.commit()
+    return {"status": "success", "message": f"User {user.email} deleted successfully"}
+
+
 @router.get("/tracking")
 def get_fleet_tracking(db: Session = Depends(get_db)):
     """Returns real-time and historical tracking details for all cars and trips.

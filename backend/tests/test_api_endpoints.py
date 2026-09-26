@@ -61,12 +61,12 @@ def test_auth_login_invalid_credentials():
 def test_auth_login_demo_customer():
     response = client.post(
         "/api/auth/login",
-        json={"email": "ravi@example.com", "password": "Password1"}
+        json={"email": "aisha@example.com", "password": "Password1"}
     )
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data
-    assert data["user"]["email"] == "ravi@example.com"
+    assert data["user"]["email"] == "aisha@example.com"
     assert data["user"]["role"] == "customer"
 
 

@@ -12,6 +12,7 @@ class UserCreate(BaseModel):
     full_name: str = Field(min_length=2, max_length=120)
     email: EmailStr
     phone: str = Field(pattern=PHONE_RE, description="10 digit Indian mobile number")
+    driving_license: Optional[str] = Field(default=None, max_length=50, description="Indian Driving Licence Number")
     password: str = Field(min_length=8, max_length=72)
     preferred_language: Literal["en", "te", "hi", "auto"] = "auto"
 
@@ -31,6 +32,7 @@ class UserLogin(BaseModel):
 class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(default=None, min_length=2, max_length=120)
     phone: Optional[str] = Field(default=None, pattern=PHONE_RE)
+    driving_license: Optional[str] = Field(default=None, max_length=50)
     preferred_language: Optional[Literal["en", "te", "hi", "auto"]] = None
     voice_response: Optional[bool] = None
     voice_speed: Optional[Literal["slow", "normal", "fast"]] = None
@@ -44,6 +46,7 @@ class UserOut(BaseModel):
     full_name: str
     email: EmailStr
     phone: str
+    driving_license: Optional[str] = None
     role: UserRole
     preferred_language: str
     voice_response: bool

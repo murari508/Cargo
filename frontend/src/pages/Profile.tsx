@@ -8,6 +8,7 @@ export default function Profile() {
   const [form, setForm] = useState({
     full_name: user?.full_name ?? '',
     phone: user?.phone ?? '',
+    driving_license: user?.driving_license ?? '',
   })
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -38,6 +39,29 @@ export default function Profile() {
             <input id="phone" className="field" pattern="[6-9][0-9]{9}" value={form.phone}
               onChange={e => setForm({ ...form, phone: e.target.value })} />
           </div>
+        </div>
+
+        <div>
+          <label className="label flex items-center justify-between" htmlFor="dl">
+            <span>Driving Licence (DL) Number</span>
+            {form.driving_license ? (
+              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded">
+                ✓ On File
+              </span>
+            ) : (
+              <span className="text-[10px] text-amber-400">Required for Car Rentals</span>
+            )}
+          </label>
+          <input
+            id="dl"
+            placeholder="e.g. TS09 20210012345 or DL-1420110012345"
+            className="field uppercase tracking-wider font-mono text-sm"
+            value={form.driving_license}
+            onChange={e => setForm({ ...form, driving_license: e.target.value.toUpperCase() })}
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            Adding your licence number saves time during checkout and auto-verifies your self-drive eligibility.
+          </p>
         </div>
 
         <div>
