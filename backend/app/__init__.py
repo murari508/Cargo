@@ -1,0 +1,1 @@
+"""CarGo backend application package."""
