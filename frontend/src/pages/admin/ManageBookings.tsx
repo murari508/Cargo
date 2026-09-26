@@ -57,6 +57,22 @@ export default function ManageBookings() {
                   <td className="p-4">
                     <p className="text-white">{b.customer_name}</p>
                     <p className="text-xs text-slate-500">{b.customer_email}</p>
+                    {b.driving_license && (
+                      <div className="mt-1 flex items-center gap-1.5 text-[11px] text-amber-300">
+                        <span>🪪</span>
+                        <span className="font-mono">{b.driving_license}</span>
+                        {b.license_image_url && (
+                          <a
+                            href={b.license_image_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="ml-1 text-[10px] text-signal underline hover:text-signal-bright"
+                          >
+                            [View Card]
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="p-4 text-slate-400">
                     {b.pickup_date} → {b.return_date}

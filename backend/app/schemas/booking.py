@@ -41,6 +41,7 @@ class BookingCreate(BaseModel):
     return_location: str = Field(min_length=2, max_length=120)
     destination: Optional[str] = Field(default="", max_length=160)
     driving_license: Optional[str] = Field(default=None, max_length=50, description="Valid Driving Licence Number")
+    license_image_url: Optional[str] = Field(default="", max_length=255, description="Verified DL Image URL")
     pickup_date: date
     return_date: date
     pickup_time: time = time(10, 0)
@@ -63,6 +64,7 @@ class BookingOut(BaseModel):
     return_location: str
     destination: str = ""
     driving_license: str = ""
+    license_image_url: str = ""
     current_location: str = ""
     current_lat: float = 0.0
     current_lng: float = 0.0

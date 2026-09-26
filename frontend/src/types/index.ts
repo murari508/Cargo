@@ -8,6 +8,7 @@ export interface User {
   phone: string
   role: Role
   driving_license?: string
+  license_image_url?: string
   preferred_language: LangCode
   voice_response: boolean
   voice_speed: 'slow' | 'normal' | 'fast'
@@ -71,6 +72,7 @@ export interface Booking {
   booking_status: BookingStatus
   booking_reference: string
   driving_license?: string
+  license_image_url?: string
   created_at: string
   car?: Car
   destination?: string

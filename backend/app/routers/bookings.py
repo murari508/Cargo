@@ -1,7 +1,7 @@
 import secrets
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -10,13 +10,35 @@ from app.dependencies import get_current_user
 from app.models import Booking, BookingStatus, Car, PaymentStatus, User, UserRole
 from app.schemas.booking import (BookingCreate, BookingListOut, BookingOut,
                                  PriceQuote, PriceQuoteRequest)
-from app.services import availability, pricing, tracking
+from app.services import availability, license_verifier, pricing, tracking
 
 router = APIRouter(prefix="/api/bookings", tags=["bookings"])
 
 
 def _reference() -> str:
     return "CG" + secrets.token_hex(4).upper()
+
+
+@router.post("/verify-license")
+async def verify_driving_license(
+    file: UploadFile = File(...),
+    dl_number: str = Form(""),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Validates the uploaded Driving Licence image.
+    If valid: saves the image, returns approval status, and associates it with the user account.
+    If invalid: returns valid=False with an explicit reason explaining why it was rejected.
+    """
+    file_bytes = await file.read()
+    result = license_verifier.validate_license_image(file_bytes, file.filename or "license.jpg", dl_number)
+    if result.get("valid"):
+        if result.get("dl_number") and not user.driving_license:
+            user.driving_license = result["dl_number"]
+        if result.get("image_url"):
+            user.license_image_url = result["image_url"]
+        db.commit()
+    return result
 
 
 @router.post("/quote", response_model=PriceQuote)
@@ -39,6 +61,26 @@ def create_booking(payload: BookingCreate, db: Session = Depends(get_db),
     if payload.pickup_date < date.today():
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Pickup date is in the past")
 
+    # Enforce Driving Licence requirement: only verified licence holders can book
+    dl_number = (payload.driving_license or "").strip() or (user.driving_license or "").strip()
+    license_img = (payload.license_image_url or "").strip() or (user.license_image_url or "").strip()
+
+    if not dl_number or len(dl_number) < 5:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "A valid Driving Licence number is required to book a self-drive car. Only verified licence holders are permitted to book.",
+        )
+    if not license_img:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Driving Licence image verification is mandatory. Please upload a clear, valid Driving Licence photo before ordering.",
+        )
+
+    if not user.driving_license and dl_number:
+        user.driving_license = dl_number
+    if not user.license_image_url and license_img:
+        user.license_image_url = license_img
+
     ok, reason, clashes = availability.check(db, car, payload.pickup_date, payload.return_date)
     if not ok:
         raise HTTPException(status.HTTP_409_CONFLICT,
@@ -50,16 +92,6 @@ def create_booking(payload: BookingCreate, db: Session = Depends(get_db),
     lat, lng = tracking.get_city_coordinates(payload.pickup_location)
     route = tracking.build_default_route(payload.pickup_location, dest)
 
-    # Enforce Driving Licence requirement: only verified licence holders can book
-    dl_number = (payload.driving_license or "").strip() or (user.driving_license or "").strip()
-    if not dl_number or len(dl_number) < 5:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            "A valid Driving Licence number is required to book a self-drive car. Only verified licence holders are permitted to book.",
-        )
-    if not user.driving_license and dl_number:
-        user.driving_license = dl_number
-
     booking = Booking(
         user_id=user.id,
         car_id=car.id,
@@ -67,6 +99,7 @@ def create_booking(payload: BookingCreate, db: Session = Depends(get_db),
         return_location=payload.return_location,
         destination=dest,
         driving_license=dl_number,
+        license_image_url=license_img,
         current_location=f"{payload.pickup_location} Hub",
         current_lat=lat,
         current_lng=lng,

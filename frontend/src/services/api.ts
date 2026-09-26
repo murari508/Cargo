@@ -24,20 +24,28 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = tokenStore.get()
+  const defaultHeaders: Record<string, string> = {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+  if (!(options.body instanceof FormData)) {
+    defaultHeaders['Content-Type'] = 'application/json'
+  }
   const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...defaultHeaders,
       ...(options.headers ?? {}),
     },
   })
   if (res.status === 204) return undefined as T
   const body = await res.json().catch(() => null)
   if (!res.ok) {
-    const err = body?.error
+    const rawErr = body?.detail ?? body?.error
+    const message = typeof rawErr === 'string'
+      ? rawErr
+      : rawErr?.message ?? (Array.isArray(rawErr) ? rawErr.map(x => x.msg || JSON.stringify(x)).join(', ') : 'Something went wrong')
     if (res.status === 401) tokenStore.clear()
-    throw new ApiError(res.status, err?.message ?? 'Something went wrong', err?.detail)
+    throw new ApiError(res.status, message, body)
   }
   return body as T
 }
@@ -103,6 +111,15 @@ export const api = {
       get<Paged<Booking>>(`/api/bookings${qs({ booking_status })}`),
     one: (id: number) => get<Booking>(`/api/bookings/${id}`),
     cancel: (id: number) => put<Booking>(`/api/bookings/${id}/cancel`),
+    verifyLicense: (file: File, dlNumber: string = '') => {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('dl_number', dlNumber)
+      return request<{ valid: boolean; reason?: string; dl_number: string; image_url: string; message?: string }>(
+        '/api/bookings/verify-license',
+        { method: 'POST', body: formData }
+      )
+    },
   },
   payments: {
     methods: () => get<{ provider: string; methods: { id: string; label: string }[]; note: string }>(

@@ -20,6 +20,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(160), unique=True, index=True, nullable=False)
     phone: Mapped[str] = mapped_column(String(20), nullable=False)
     driving_license: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    license_image_url: Mapped[str | None] = mapped_column(String(255), default="", nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.customer, nullable=False)
     # voice assistant preferences

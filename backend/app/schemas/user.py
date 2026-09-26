@@ -33,6 +33,7 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(default=None, min_length=2, max_length=120)
     phone: Optional[str] = Field(default=None, pattern=PHONE_RE)
     driving_license: Optional[str] = Field(default=None, max_length=50)
+    license_image_url: Optional[str] = Field(default=None, max_length=255)
     preferred_language: Optional[Literal["en", "te", "hi", "auto"]] = None
     voice_response: Optional[bool] = None
     voice_speed: Optional[Literal["slow", "normal", "fast"]] = None
@@ -47,6 +48,7 @@ class UserOut(BaseModel):
     email: EmailStr
     phone: str
     driving_license: Optional[str] = None
+    license_image_url: Optional[str] = ""
     role: UserRole
     preferred_language: str
     voice_response: bool
