@@ -70,13 +70,16 @@ def test_license_verification_blank_image():
 
 
 def test_booking_rejected_without_verified_license():
+    from datetime import date, timedelta
     token = create_access_token(6, "customer")  # madhu@gmail.com has no DL on file
+    future_pickup = date.today() + timedelta(days=10)
+    future_return = date.today() + timedelta(days=13)
     payload = {
         "car_id": 1,
         "pickup_location": "Hyderabad",
         "return_location": "Hyderabad",
-        "pickup_date": "2026-10-01",
-        "return_date": "2026-10-03",
+        "pickup_date": future_pickup.isoformat(),
+        "return_date": future_return.isoformat(),
         "driving_license": "",
         "license_image_url": "",
     }
