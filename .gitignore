@@ -58,3 +58,7 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Uploaded User Files
+frontend/public/uploads/
+
